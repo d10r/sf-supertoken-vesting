@@ -40,7 +40,7 @@ contract DeployVestingScript is Script {
     function setUp() public { }
 
     function run() public {
-        _showGitRevision();
+        //_showGitRevision();
 
         // Deployer settings (deploy key shall be in Foundry Keystore)
         uint256 deployerPrivateKey = 0;
@@ -64,15 +64,15 @@ contract DeployVestingScript is Script {
         console2.log("SupVestingFactory deployed at: ", supVestingFactory);
     }
 
-    function _showGitRevision() internal {
-        string[] memory inputs = new string[](2);
-        inputs[0] = "../tasks/show-git-rev.sh";
-        inputs[1] = "forge_ffi_mode";
-        try vm.ffi(inputs) returns (bytes memory res) {
-            console2.log("GIT REVISION :");
-            console2.log(string(res));
-        } catch {
-            console2.log("!! _showGitRevision: FFI not enabled");
-        }
-    }
+    // function _showGitRevision() internal {
+    //     string[] memory inputs = new string[](2);
+    //     inputs[0] = "../tasks/show-git-rev.sh";
+    //     inputs[1] = "forge_ffi_mode";
+    //     try vm.ffi(inputs) returns (bytes memory res) {
+    //         console2.log("GIT REVISION :");
+    //         console2.log(string(res));
+    //     } catch {
+    //         console2.log("!! _showGitRevision: FFI not enabled");
+    //     }
+    // }
 }

@@ -10,11 +10,11 @@ filename=$1
 # - RPC_URL: base mainnet RPC
 # - MODE (optional): SIMULATE (default), TESTING, EXECUTE.
 #        in TESTING mode, env var ADMIN_ADDR must be set
-
-# Optional env var overrides:
 # - CLIFF_DATE: override cliffDate (unix seconds)
 # - END_DATE: override endDate (unix seconds)
-# - CLIFF_AMOUNT: override cliffAmount (wei)
+#
+# optional env vars:
+# - CLIFF_AMOUNT: override cliffAmount (wei) - defaults to 0
 
 MODE=${MODE:-"SIMULATE"}
 
@@ -25,12 +25,13 @@ if [ "$chainId" != "8453" ]; then
   exit 1
 fi
 
-echo "using account $ACCOUNT_NAME, RPC $RPC_URL"
+cliffAmount=${CLIFF_AMOUNT:-0}
 
-# Factory address on Base
-FACTORY="0x3DF8A6558073e973f4c3979138Cca836C993E285"
-DEFAULT_CLIFFDATE=1771459200
-DEFAULT_ENDDATE=1834531200
+FACTORY=${FACTORY_ADDRESS}
+cliffDate=${CLIFF_DATE}
+endDate=${END_DATE}
+
+echo "using account $ACCOUNT_NAME, RPC $RPC_URL, FACTORY $FACTORY, cliffDate $cliffDate, endDate $endDate, cliffAmount $cliffAmount"
 
 # Skip header
 row=1
@@ -58,21 +59,15 @@ tail -n +2 $filename | while IFS=$'\t' read -r type recipient tokens category cl
 
   echo "==== PROCESSING #$row: $recipient ===="
 
-  # Resolve ENS if recipient ends with .eth
-  recipientAddr=$recipient
-  if [[ $recipient == *.eth ]]; then
-    recipientAddr=$(cast resolve-name "$recipient" --rpc-url https://eth-mainnet.rpc.x.superfluid.dev)
-    echo "resolved ENS $recipient to $recipientAddr"
-  fi
+  # # Resolve ENS if recipient ends with .eth
+  # recipientAddr=$recipient
+  # if [[ $recipient == *.eth ]]; then
+  #   recipientAddr=$(cast resolve-name "$recipient" --rpc-url https://eth-mainnet.rpc.x.superfluid.dev)
+  #   echo "resolved ENS $recipient to $recipientAddr"
+  # fi
 
-  # Assume 18 decimals
+  # Add 18 decimals
   amount=$(echo "scale=0; $tokens * 10^18" | bc)
-  defaultCliffAmount=$(echo "scale=0; $amount / 3" | bc)
-
-  # Dates and amounts with optional env var overrides
-  cliffDate=${CLIFF_DATE:-$DEFAULT_CLIFFDATE}
-  endDate=${END_DATE:-$DEFAULT_ENDDATE}
-  cliffAmount=${CLIFF_AMOUNT:-$defaultCliffAmount}
 
   # Calldata
   calldata=$(cast calldata "createSupVestingContract(address,uint256,uint256,uint256,uint32,uint32)" "$recipientAddr" "$index" "$amount" "$cliffAmount" "$cliffDate" "$endDate")
