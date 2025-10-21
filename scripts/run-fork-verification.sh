@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is used to verify that the script creating SUP vesting schedules base on a spreadsheet input file
+# This script is used to verify that the script creating vesting schedules based on a spreadsheet input file
 # is working as expected.
 # This is done by forking base-mainnet with anvil, impersonating the treasury and admin accounts,
 # creating the vesting schedules, and then running the tests.
@@ -10,12 +10,13 @@
 
 set -eu
 
-RPC_URL=$RPC_URL
-SUP_VESTING_FACTORY_ADDR="0x3DF8A6558073e973f4c3979138Cca836C993E285"
-SUP_ADDR="0xa69f80524381275A7fFdb3AE01c54150644c8792"
-# 500 M
-APPROVAL_AMOUNT="500000000000000000000000000"
-SCHEDULES_FILE=${SCHEDULES_FILE:-"data/schedules_1.tsv"}
+RPC_URL=${RPC_URL}
+VESTING_FACTORY_ADDR=${FACTORY_ADDRESS}
+TOKEN_ADDR=${TOKEN_ADDRESS}
+APPROVAL_AMOUNT=${APPROVAL_AMOUNT:-"500000000000000000000000000"} # default: 500 M
+SCHEDULES_FILE=${SCHEDULES_FILE:-"data/schedules.tsv"}
+
+echo "VESTING FACTORY_ADDRESS: $VESTING_FACTORY_ADDR, TOKEN_ADDRESS: $TOKEN_ADDR"
 
 # Check if file exists and ends with a newline
 if [ -f "$SCHEDULES_FILE" ]; then
@@ -57,12 +58,12 @@ done
 echo "Anvil is ready!"
 
 # get treasury address:
-treasury_raw=$(cast call $SUP_VESTING_FACTORY_ADDR "treasury()")
+treasury_raw=$(cast call $VESTING_FACTORY_ADDR "treasury()")
 treasury="0x$(echo $treasury_raw | sed 's/0x//' | tail -c 41)"
 echo "treasury: $treasury"
 
 # get admin address:
-admin_raw=$(cast call $SUP_VESTING_FACTORY_ADDR "admin()")
+admin_raw=$(cast call $VESTING_FACTORY_ADDR "admin()")
 admin="0x$(echo $admin_raw | sed 's/0x//' | tail -c 41)"
 echo "admin: $admin"
 
@@ -74,16 +75,17 @@ cast rpc anvil_setBalance $treasury 0x1000000000000000000 --rpc-url http://127.0
 
 # Grant ERC20 allowance
 echo "granting ERC20 allowance by impersonating the treasury..."
-cast send -q $SUP_ADDR "approve(address,uint256)" $SUP_VESTING_FACTORY_ADDR $APPROVAL_AMOUNT --from $treasury --unlocked --rpc-url http://127.0.0.1:8545
+cast send -q $TOKEN_ADDR "approve(address,uint256)" $VESTING_FACTORY_ADDR $APPROVAL_AMOUNT --from $treasury --unlocked --rpc-url http://127.0.0.1:8545
 
 # now impersonate the admin account
+echo "impersonating the admin account..."
 cast rpc anvil_impersonateAccount $admin --rpc-url http://127.0.0.1:8545
 
 # Run your Cast script
-MODE=TESTING ADMIN_ADDR=$admin ACCOUNT_NAME=dummy RPC_URL=http://127.0.0.1:8545 ../tasks/create-vestings.sh $SCHEDULES_FILE
+MODE=TESTING ADMIN_ADDR=$admin ACCOUNT_NAME=dummy FACTORY_ADDRESS=$VESTING_FACTORY_ADDR RPC_URL=http://127.0.0.1:8545 tasks/create-vestings.sh $SCHEDULES_FILE
 
 # Run tests
-forge test --fork-url http://127.0.0.1:8545 --match-contract SupVestingForkTest -vv
+#forge test --fork-url http://127.0.0.1:8545 --match-contract SupVestingForkTest -vv
 
 # Optional: Stop impersonation
 cast rpc anvil_stopImpersonatingAccount $treasury --rpc-url http://127.0.0.1:8545

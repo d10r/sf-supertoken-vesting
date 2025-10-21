@@ -2,6 +2,8 @@
 
 set -eu
 
+source .env
+
 # expects an argument: filename with the tsv (tab separated values) file listing the schedules
 filename=$1
 
@@ -35,7 +37,7 @@ echo "using account $ACCOUNT_NAME, RPC $RPC_URL, FACTORY $FACTORY, cliffDate $cl
 
 # Skip header
 row=1
-tail -n +2 $filename | while IFS=$'\t' read -r type recipient tokens category cliffonly; do
+tail -n +2 $filename | while IFS=$'\t' read -r type recipient tokens; do
   # Clean inputs
   type=$(echo "$type" | tr -d ' "\r')
   recipient=$(echo "$recipient" | tr -d ' "\r')
@@ -59,8 +61,8 @@ tail -n +2 $filename | while IFS=$'\t' read -r type recipient tokens category cl
 
   echo "==== PROCESSING #$row: $recipient ===="
 
+  recipientAddr=$recipient
   # # Resolve ENS if recipient ends with .eth
-  # recipientAddr=$recipient
   # if [[ $recipient == *.eth ]]; then
   #   recipientAddr=$(cast resolve-name "$recipient" --rpc-url https://eth-mainnet.rpc.x.superfluid.dev)
   #   echo "resolved ENS $recipient to $recipientAddr"

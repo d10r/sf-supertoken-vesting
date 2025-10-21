@@ -28,7 +28,7 @@ TOKEN_SYMBOL=lockedSUP \
 VESTING_SCHEDULER_ADDRESS=0x7b77A34b8B76B66E97a5Ae01aD052205d5cbe257 \
 ADMIN_ADDRESS={ADMIN_ADDRESS} \
 TREASURY_ADDRESS={TREASURY_ADDRESS} \
-forge script script/vesting/DeployVesting.s.sol:DeployVestingScript --rpc-url $BASE_MAINNET_RPC_URL --account $DEPLOYER --broadcast --verify -vvv --etherscan-api-key $ETHERSCAN_V2_API_KEY
+forge script script/vesting/DeployVesting.s.sol:DeployVestingScript --rpc-url $BASE_MAINNET_RPC_URL --account $DEPLOYER --broadcast --verify -vvv --etherscan-api-key $ETHERSCAN_API_V2_KEY
 ```
 
 ### Step 2 :
