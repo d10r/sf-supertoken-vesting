@@ -34,7 +34,7 @@ import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/cont
 import { IVestingSchedulerV2 } from
     "@superfluid-finance/automation-contracts/scheduler/contracts/interface/IVestingSchedulerV2.sol";
 
-/* SUP Token Vesting Interfaces */
+/* SuperToken Vesting Interfaces */
 import { ISupVestingFactory } from "../interfaces/vesting/ISupVestingFactory.sol";
 import { SupVesting } from "./SupVesting.sol";
 
@@ -42,9 +42,9 @@ using SuperTokenV1Library for ISuperToken;
 using SafeCast for int256;
 
 /**
- * @title SUP Token Vesting Factory Contract
+ * @title SuperToken Vesting Factory Contract
  * @author Superfluid
- * @notice Contract deploying new SUP Token Vesting contracts
+ * @notice Contract deploying new SUPERTOKEN Token Vesting contracts
  */
 contract SupVestingFactory is ISupVestingFactory {
     //      ____                          __        __    __        _____ __        __
@@ -57,7 +57,7 @@ contract SupVestingFactory is ISupVestingFactory {
     IVestingSchedulerV2 public immutable VESTING_SCHEDULER;
 
     /// @notice SuperToken contract address
-    ISuperToken public immutable SUP;
+    ISuperToken public immutable TOKEN;
 
     /// @notice Minimum cliff period for a vesting contract
     uint256 public constant MIN_CLIFF_PERIOD = 3 days;
@@ -68,13 +68,13 @@ contract SupVestingFactory is ISupVestingFactory {
     //   ___/ / /_/ /_/ / /_/  __(__  )
     //  /____/\__/\__,_/\__/\___/____/
 
-    /// @notice Name of the lockedSUP Token
+    /// @notice Name of the locked Token
     string public name;
 
-    /// @notice Symbol of the lockedSUP Token
+    /// @notice Symbol of the locked Token
     string public symbol;
 
-    /// @notice Decimals of the lockedSUP Token
+    /// @notice Decimals of the locked Token
     uint256 public decimals;
 
     /// @notice Foundation treasury address
@@ -83,7 +83,7 @@ contract SupVestingFactory is ISupVestingFactory {
     /// @notice Foundation admin address
     address public admin;
 
-    /// @notice Mapping of recipient addresses to their corresponding SUP Token Vesting contracts
+    /// @notice Mapping of recipient addresses to their corresponding SuperToken Vesting contracts
     mapping(address recipient => address[] supVesting) public supVestings;
 
     /// @notice List of recipient addresses
@@ -98,23 +98,25 @@ contract SupVestingFactory is ISupVestingFactory {
     /**
      * @notice SupVestingFactory contract constructor
      * @param vestingScheduler The Superfluid vesting scheduler contract
-     * @param token The SUP token contract
+     * @param token The SuperToken contract
      * @param treasuryAddress The foundation treasury address
      * @param adminAddress The foundation admin address
      */
     constructor(
         IVestingSchedulerV2 vestingScheduler,
         ISuperToken token,
+        string memory erc20Name_,
+        string memory erc20Symbol,
         address treasuryAddress,
         address adminAddress
     ) {
         // Persist state variables
         VESTING_SCHEDULER = vestingScheduler;
-        SUP = token;
+        TOKEN = token;
         treasury = treasuryAddress;
         admin = adminAddress;
-        name = "Locked SUP Token";
-        symbol = "lockedSUP";
+        name = erc20Name_;
+        symbol = erc20Symbol;
         decimals = 18;
     }
 
@@ -152,15 +154,15 @@ contract SupVestingFactory is ISupVestingFactory {
         // Add the remainder to the cliff amount
         cliffAmount += vestingAmount - (uint96(flowRate) * vestingDuration);
 
-        // Deploy the new SUP Token Vesting contract
+        // Deploy the new SuperToken Vesting contract
         newSupVestingContract =
-            address(new SupVesting(VESTING_SCHEDULER, SUP, recipient, cliffDate, flowRate, cliffAmount, endDate));
+            address(new SupVesting(VESTING_SCHEDULER, TOKEN, recipient, cliffDate, flowRate, cliffAmount, endDate));
 
-        // Maps the recipient address to the new SUP Token Vesting contract
+        // Maps the recipient address to the new SuperToken Vesting contract
         supVestings[recipient].push(newSupVestingContract);
 
         // Transfer the tokens from the treasury to the new vesting contract
-        SUP.transferFrom(treasury, newSupVestingContract, amount);
+        TOKEN.transferFrom(treasury, newSupVestingContract, amount);
 
         // Emit the events
         emit Transfer(address(0), recipient, amount);
@@ -191,9 +193,9 @@ contract SupVestingFactory is ISupVestingFactory {
     function balanceOf(address vestingReceiver) public view returns (uint256 unvestedBalance) {
         for (uint256 i; i < supVestings[vestingReceiver].length; ++i) {
             // Get the flow buffer amount
-            (,, uint256 deposit,) = SUP.getFlowInfo(supVestings[vestingReceiver][i], vestingReceiver);
+            (,, uint256 deposit,) = TOKEN.getFlowInfo(supVestings[vestingReceiver][i], vestingReceiver);
 
-            unvestedBalance += SUP.balanceOf(supVestings[vestingReceiver][i]) + deposit;
+            unvestedBalance += TOKEN.balanceOf(supVestings[vestingReceiver][i]) + deposit;
         }
     }
 

@@ -59,8 +59,8 @@ contract SupVesting is ISupVesting {
     /// @notice Superfluid Vesting Scheduler contract address
     IVestingSchedulerV2 public immutable VESTING_SCHEDULER;
 
-    /// @notice SUP Token contract address
-    ISuperToken public immutable SUP;
+    /// @notice SuperToken contract address
+    ISuperToken public immutable TOKEN;
 
     //     ______                 __                  __
     //    / ____/___  ____  _____/ /________  _______/ /_____  _____
@@ -71,7 +71,7 @@ contract SupVesting is ISupVesting {
     /**
      * @notice SupVesting contract constructor
      * @param vestingScheduler The Superfluid vesting scheduler contract
-     * @param sup The SUP token contract
+     * @param token The SuperToken address
      * @param recipient The recipient of the vested tokens
      * @param cliffDate The timestamp when the cliff period ends and the flow can start
      * @param flowRate The rate at which tokens are streamed after the cliff period
@@ -80,7 +80,7 @@ contract SupVesting is ISupVesting {
      */
     constructor(
         IVestingSchedulerV2 vestingScheduler,
-        ISuperToken sup,
+        ISuperToken token,
         address recipient,
         uint32 cliffDate,
         int96 flowRate,
@@ -90,16 +90,16 @@ contract SupVesting is ISupVesting {
         // Persist the admin, recipient, and vesting scheduler addresses
         RECIPIENT = recipient;
         VESTING_SCHEDULER = vestingScheduler;
-        SUP = sup;
+        TOKEN = token;
         FACTORY = ISupVestingFactory(msg.sender);
 
         // Grant flow and token allowances
-        sup.setMaxFlowPermissions(address(vestingScheduler));
-        sup.approve(address(vestingScheduler), type(uint256).max);
+        token.setMaxFlowPermissions(address(vestingScheduler));
+        token.approve(address(vestingScheduler), type(uint256).max);
 
         // Create the vesting schedule for this recipient
         vestingScheduler.createVestingSchedule(
-            sup,
+            token,
             recipient,
             uint32(block.timestamp),
             cliffDate,
@@ -119,19 +119,19 @@ contract SupVesting is ISupVesting {
     /// @inheritdoc ISupVesting
     function emergencyWithdraw() external onlyAdmin {
         // Close the flow between this contract and the recipient
-        SUP.flow(RECIPIENT, 0);
+        TOKEN.flow(RECIPIENT, 0);
 
         IVestingSchedulerV2.VestingSchedule memory vs =
-            VESTING_SCHEDULER.getVestingSchedule(address(SUP), address(this), RECIPIENT);
+            VESTING_SCHEDULER.getVestingSchedule(address(TOKEN), address(this), RECIPIENT);
         if (vs.endDate != 0) {
             // Delete the vesting schedule if it is not already deleted
-            VESTING_SCHEDULER.deleteVestingSchedule(SUP, RECIPIENT, bytes(""));
+            VESTING_SCHEDULER.deleteVestingSchedule(TOKEN, RECIPIENT, bytes(""));
         }
         // Fetch the remaining balance of the vesting contract
-        uint256 remainingBalance = SUP.balanceOf(address(this));
+        uint256 remainingBalance = TOKEN.balanceOf(address(this));
 
         // Transfer the remaining SUP tokens to the treasury
-        SUP.transfer(FACTORY.treasury(), remainingBalance);
+        TOKEN.transfer(FACTORY.treasury(), remainingBalance);
 
         // Emit the `VestingDeleted` event
         emit VestingDeleted(remainingBalance);

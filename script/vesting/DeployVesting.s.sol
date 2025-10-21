@@ -13,20 +13,20 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 using SafeCast for int256;
 
-function _deployVestingFactory(address vestingScheduler, address supToken, address treasury, address governor)
+function _deployVestingFactory(address vestingScheduler, address token, string memory name, string memory symbol, address treasury, address governor)
     returns (address supVestingFactoryAddress)
 {
     SupVestingFactory supVestingFactory =
-        new SupVestingFactory(IVestingSchedulerV2(vestingScheduler), ISuperToken(supToken), treasury, governor);
+        new SupVestingFactory(IVestingSchedulerV2(vestingScheduler), ISuperToken(token), name, symbol, treasury, governor);
     supVestingFactoryAddress = address(supVestingFactory);
 }
 
-function _deployDummyVesting(address vestingScheduler, address supToken, address governor)
+function _deployDummyVesting(address vestingScheduler, address token, address governor)
     returns (address supVestingAddress)
 {
     SupVesting supVesting = new SupVesting(
         IVestingSchedulerV2(vestingScheduler),
-        ISuperToken(supToken),
+        ISuperToken(token),
         governor,
         uint32(block.timestamp + 1 days),
         1,
@@ -47,7 +47,9 @@ contract DeployVestingScript is Script {
 
         // Deployment parameters
         address vestingScheduler = vm.envAddress("VESTING_SCHEDULER_ADDRESS");
-        address supToken = vm.envAddress("SUP_ADDRESS");
+        address token = vm.envAddress("TOKEN_ADDRESS");
+        string memory name = vm.envString("TOKEN_NAME");
+        string memory symbol = vm.envString("TOKEN_SYMBOL");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address admin = vm.envAddress("ADMIN_ADDRESS");
 
@@ -57,8 +59,8 @@ contract DeployVestingScript is Script {
             vm.startBroadcast();
         }
 
-        address supVestingFactory = _deployVestingFactory(vestingScheduler, supToken, treasury, admin);
-        _deployDummyVesting(vestingScheduler, supToken, admin);
+        address supVestingFactory = _deployVestingFactory(vestingScheduler, token, name, symbol, treasury, admin);
+        _deployDummyVesting(vestingScheduler, token, admin);
         console2.log("SupVestingFactory deployed at: ", supVestingFactory);
     }
 
