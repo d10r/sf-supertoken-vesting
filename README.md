@@ -28,7 +28,7 @@ TOKEN_SYMBOL=lockedSUP \
 VESTING_SCHEDULER_ADDRESS=0x7b77A34b8B76B66E97a5Ae01aD052205d5cbe257 \
 ADMIN_ADDRESS={ADMIN_ADDRESS} \
 TREASURY_ADDRESS={TREASURY_ADDRESS} \
-forge script script/vesting/DeployVesting.s.sol:DeployVestingScript --rpc-url $BASE_MAINNET_RPC_URL --account $DEPLOYER --broadcast --verify -vvv --etherscan-api-key $ETHERSCAN_API_V2_KEY
+forge script script/vesting/DeployVesting.s.sol:DeployVestingScript --rpc-url $RPC_URL --account $ACCOUNT_NAME --broadcast --verify -vvv --etherscan-api-key $ETHERSCAN_API_V2_KEY
 ```
 
 ### Step 2 :
@@ -42,7 +42,7 @@ forge script script/vesting/DeployVesting.s.sol:DeployVestingScript --rpc-url $B
 
 Fork test:
 ```
-RPC_URL=... SCHEDULES_FILE=data/schedules_x.tsv script/vesting/run-fork-verification.sh
+RPC_URL=... SCHEDULES_FILE=data/schedules.tsv script/vesting/run-fork-verification.sh
 ```
 
 Note: the fork testing script also simulates approval to the factory, thus won't tell you if step 2 is missing.
@@ -51,7 +51,7 @@ It's about verifying that all transactions would succeed, with the final expecte
 Execution:
 set env vars FACTORY_ADDRESS, CLIFF_DATE, END_DATE, CLIFF_AMOUNT (optional), then run
 ```
-MODE=EXECUTE ACCOUNT_NAME=... RPC_URL=... ../tasks/create-vestings.sh data/schedules_x.tsv
+MODE=EXECUTE ACCOUNT_NAME=... RPC_URL=... ../tasks/create-vestings.sh data/schedules.tsv
 ```
 
 ### Step 4 :
@@ -61,10 +61,3 @@ MODE=EXECUTE ACCOUNT_NAME=... RPC_URL=... ../tasks/create-vestings.sh data/sched
 ### Step 5 :
 
 - Update `SupVestingFactory` admin account (`SupVestingFactory::setAdmin`) to TREASURY multisig
-
-## Add schedules
-
-```
-MODE=SIMULATE|EXECUTE RPC_URL=$BASE_MAINNET_RPC_URL tasks/create-vestings.sh data/schedules.tsv
-```
-several env vars needed, see script.
